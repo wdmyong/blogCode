@@ -18,8 +18,6 @@ public class AppRedisFactoryConfig {
 
     @Bean
     public LettuceConnectionFactory redisConnectionFactory() {
-        System.out.println(url);
-        System.out.println(port);
         return new LettuceConnectionFactory(new RedisStandaloneConfiguration(url, port));
     }
 

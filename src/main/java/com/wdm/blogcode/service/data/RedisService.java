@@ -11,5 +11,5 @@ public interface RedisService {
 
     void pexpire(String key, long millis);
 
-    void incr(String key);
+    long incr(String key);
 }

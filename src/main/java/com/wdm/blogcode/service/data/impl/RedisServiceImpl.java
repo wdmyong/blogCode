@@ -35,7 +35,8 @@ public class RedisServiceImpl implements RedisService {
     }
 
     @Override
-    public void incr(String key) {
-        redisTemplate.opsForValue().increment(key);
+    public long incr(String key) {
+        Long increment = redisTemplate.opsForValue().increment(key);
+        return increment == null ? 0L : increment;
     }
 }
