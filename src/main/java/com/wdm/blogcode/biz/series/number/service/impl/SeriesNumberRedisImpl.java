@@ -14,9 +14,9 @@ import com.wdm.blogcode.utils.FormatUtil;
  * 利用其它自增生成器都可实现，如Mysql自增主键等
  * 其特点在于：依赖分布式存储、暴露了id、方案简单
  */
-@Service("redisServiceNumberService")
+@Service("redisSeriesNumberService")
 @Lazy
-public class SeriesNumberServiceRedisImpl implements SeriesNumberService {
+public class SeriesNumberRedisImpl implements SeriesNumberService {
 
     private static final String SERIES_NUMBER_KEY = "series_number_key:unique";
 
@@ -25,6 +25,7 @@ public class SeriesNumberServiceRedisImpl implements SeriesNumberService {
 
     @Override
     public String generateSeriesNumber() {
+        // 1000线程，百万量级，21秒扛不住，22秒可以
         return FormatUtil.format20FixedLength(redisService.incr(SERIES_NUMBER_KEY));
     }
 }

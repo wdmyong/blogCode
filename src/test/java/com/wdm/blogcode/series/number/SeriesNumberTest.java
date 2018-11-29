@@ -16,6 +16,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.wdm.blogcode.BlogCodeApplication;
 import com.wdm.blogcode.biz.series.number.model.Order;
@@ -34,10 +35,18 @@ public class SeriesNumberTest {
 
     private volatile AtomicLong atomicLong = new AtomicLong();
     private static final int THREAD_POOL_NUM = 1000;
-    private static final long TIMES = 100000;
+    private static final long TIMES = 1000000;
 
-    @Resource(name = "redisServiceNumberService")
-    private SeriesNumberService redisServiceNumberService;
+    @Resource(name = "redisSeriesNumberService")
+    private SeriesNumberService redisSeriesNumberService;
+    @Resource(name = "timestampSeriesNumberService")
+    private SeriesNumberService timestampSeriesNumberService;
+    @Resource(name = "timestampExtSeriesNumberService")
+    private SeriesNumberService timestampExtSeriesNumberService;
+    @Resource(name = "uuidSeriesNumberService")
+    private SeriesNumberService uuidSeriesNumberService;
+    @Resource(name = "uuidExtSeriesNumberService")
+    private SeriesNumberService uuidExtSeriesNumberService;
 
     @Resource
     private RedisService redisService;
@@ -51,14 +60,13 @@ public class SeriesNumberTest {
     public void test() {
         ExecutorService executorService = Executors.newFixedThreadPool(THREAD_POOL_NUM);
         long now = System.currentTimeMillis();
-        Map<Long, Order> result = Maps.newConcurrentMap();
+        Map<String, Order> result = Maps.newConcurrentMap();
         LongStream.rangeClosed(1, TIMES).forEach(id -> executorService.submit(() -> {
             atomicLong.getAndIncrement();
-            Order order = new Order(id, redisServiceNumberService.generateSeriesNumber(), now, now);
-            result.put(id, order);
+            String seriesNumber = generateSeriesNumber(5);
+            result.put(seriesNumber, new Order(id, seriesNumber, now, now));
         }));
 
-        // 等待并行执行完
         try {
             executorService.awaitTermination(5000, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
@@ -69,8 +77,35 @@ public class SeriesNumberTest {
 
         System.out.println(atomicLong.get());
         System.out.println(result.size());
+        result.keySet().stream().findFirst().ifPresent(System.out::println);
+        System.out.println(Iterables.getLast(result.keySet()));
         // result.values().forEach(System.out::println);
 
-        assertTrue(TIMES == atomicLong.get());
+        assertTrue(result.size() == atomicLong.get());
+    }
+
+    private String generateSeriesNumber(int type) {
+        final SeriesNumberService seriesNumberService;
+        switch (type) {
+            case 1:
+                seriesNumberService = redisSeriesNumberService;
+                break;
+            case 2:
+                seriesNumberService = timestampSeriesNumberService;
+                break;
+            case 3:
+                seriesNumberService = timestampExtSeriesNumberService;
+                break;
+            case 4:
+                seriesNumberService = uuidSeriesNumberService;
+                break;
+            case 5:
+                seriesNumberService = uuidExtSeriesNumberService;
+                break;
+            default:
+                seriesNumberService = redisSeriesNumberService;
+                break;
+        }
+        return seriesNumberService.generateSeriesNumber();
     }
 }
